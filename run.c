@@ -389,6 +389,12 @@ int main(int argc, char *argv[]) {
         steps = atoi(argv[3]);
     }
 
+     char *prompt = NULL;
+     if (argc >= 5) {
+         prompt = argv[4];
+     }
+
+
     // seed rng with time. if you want deterministic behavior use temperature 0.0
     srand((unsigned int)time(NULL)); 
     
@@ -453,6 +459,24 @@ int main(int argc, char *argv[]) {
     int token = 1; // 1 = BOS token in Llama-2 sentencepiece
     int pos = 0;
     printf("<s>\n"); // explicit print the initial BOS token (=1), stylistically symmetric
+    if (prompt) {
+        FILE *file = fopen(prompt, "r");
+        if (!file) {
+            printf("cannot open prompt ids\n");
+            return 1;
+        }
+        int num_tokens;
+        fscanf(file, "%d", &num_tokens);
+        for (int i = 0; i < num_tokens; i++) {
+            transformer(token, pos, &config, &state, &weights); // BOS
+            pos++;
+            fscanf(file, "%d", &token); // the last token will be processed in the main loop
+            printf("%s", vocab[token]);
+            fflush(stdout);
+        }
+        fclose(file);
+    }
+
     while (pos < steps) {
 
         // forward the transformer to get logits for the next token
